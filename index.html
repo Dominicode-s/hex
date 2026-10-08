@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hex Terrain Tiles</title>
+  <meta name="description" content="Make 3D-printable hexagon wall art of any place on Earth from real elevation data." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='25,6 75,6 100,50 75,94 25,94 0,50' fill='%23c8502e'/%3E%3C/svg%3E" />
+  <script type="module" crossorigin src="/assets/index-BZWxttkz.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-CCYi6ESa.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <svg viewBox="0 0 100 100" class="logo" aria-hidden="true"><polygon points="25,6 75,6 100,50 75,94 25,94 0,50" /></svg>
+      <div>
+        <h1>Hex Terrain Tiles</h1>
+        <p>3D-printable hexagon wall art of anywhere on Earth</p>
+      </div>
+    </div>
+    <nav class="views" role="tablist">
+      <button id="tab-map" class="active" role="tab">Map</button>
+      <button id="tab-preview" role="tab">3D preview</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="stage">
+      <div id="map"></div>
+      <div id="preview" hidden></div>
+      <div class="crosshair" aria-hidden="true"></div>
+      <div id="map-hint" class="hint">Drag the map to move the tiles. Zoom and pan as normal.</div>
+    </section>
+
+    <aside class="panel">
+      <form id="controls" autocomplete="off">
+        <fieldset>
+          <legend>Place</legend>
+          <div class="segmented mode" id="mode">
+            <label><input type="radio" name="mode" value="terrain" /><span>Terrain</span></label>
+            <label><input type="radio" name="mode" value="buildings" /><span>Buildings (England)</span></label>
+          </div>
+          <div class="search">
+            <input id="search" type="search" placeholder="Search for a place…" />
+            <button id="search-go" type="button">Go</button>
+          </div>
+          <div id="search-results" class="results"></div>
+          <div class="examples terrain-only">
+            <span>Try:</span>
+            <button type="button" data-example="fuji">Mount Fuji</button>
+            <button type="button" data-example="everest">Everest</button>
+            <button type="button" data-example="canyon">Grand Canyon</button>
+            <button type="button" data-example="lakes">Lake District</button>
+            <button type="button" data-example="pendle">Pendle Hill</button>
+            <button type="button" data-example="hawaii">Hawaii</button>
+          </div>
+          <div class="examples buildings-only">
+            <span>Try:</span>
+            <button type="button" data-example="blackpool">Blackpool</button>
+            <button type="button" data-example="london">London</button>
+            <button type="button" data-example="york">York</button>
+            <button type="button" data-example="bath">Bath</button>
+          </div>
+          <p class="note buildings-only" id="lidar-note"></p>
+          <label>Area across <output id="areaKm-out"></output>
+            <input id="areaKm" type="range" min="0" max="1000" step="1" />
+          </label>
+          <label>Rotate <output id="rotateDeg-out"></output>
+            <input id="rotateDeg" type="range" min="0" max="359" step="1" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Tiles</legend>
+          <div class="segmented" id="rings">
+            <label><input type="radio" name="rings" value="0" /><span>1 tile</span></label>
+            <label><input type="radio" name="rings" value="1" /><span>7 tiles</span></label>
+            <label><input type="radio" name="rings" value="2" /><span>19 tiles</span></label>
+          </div>
+          <label>Printer
+            <select id="printer">
+              <option value="200">Prusa MK4 / Core One / MK3 (250 × 210)</option>
+              <option value="210">Bambu X1 / P1 / A1 (256 × 256)</option>
+              <option value="180">Ender 3 / other 220 × 220 beds</option>
+              <option value="145">Bambu A1 mini / Prusa MINI (180 × 180)</option>
+              <option value="custom">Custom tile size</option>
+            </select>
+          </label>
+          <label id="flat-row">Tile size across the flats <output id="flat-out"></output>
+            <input id="flat" type="range" min="100" max="300" step="5" />
+          </label>
+          <p class="note" id="size-note"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Relief</legend>
+          <label>Highest point <output id="zHigh-out"></output>
+            <input id="zHigh" type="range" min="10" max="40" step="0.5" />
+          </label>
+          <label>Base thickness <output id="zLow-out"></output>
+            <input id="zLow" type="range" min="3" max="15" step="0.5" />
+          </label>
+          <label class="buildings-only">Building height <output id="buildingMm-out"></output>
+            <input id="buildingMm" type="range" min="3" max="14" step="0.5" />
+          </label>
+          <label class="buildings-only">Ground relief <output id="groundMm-out"></output>
+            <input id="groundMm" type="range" min="0" max="6" step="0.5" />
+          </label>
+          <label class="terrain-only">Detail boost <output id="flatten-out"></output>
+            <input id="flatten" type="range" min="0" max="0.9" step="0.05" />
+          </label>
+          <label class="terrain-only">Smoothing <output id="smoothMm-out"></output>
+            <input id="smoothMm" type="range" min="0" max="1.5" step="0.1" />
+          </label>
+          <label class="terrain-only">Coastline step <output id="seaStepMm-out"></output>
+            <input id="seaStepMm" type="range" min="0" max="3" step="0.5" />
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Hanging</legend>
+          <div class="segmented" id="mount">
+            <label><input type="radio" name="mount" value="keyhole" /><span>Keyhole</span></label>
+            <label><input type="radio" name="mount" value="magnets" /><span>Magnets</span></label>
+            <label><input type="radio" name="mount" value="flat" /><span>Flat back</span></label>
+          </div>
+          <div id="magnet-row" class="row" hidden>
+            <label>Magnet Ø
+              <select id="magnetDia"><option>6</option><option>8</option><option selected>10</option><option>12</option></select>
+            </label>
+            <label>Thickness
+              <select id="magnetThick"><option>2</option><option selected>3</option><option>4</option></select>
+            </label>
+          </div>
+          <p class="note" id="mount-note"></p>
+        </fieldset>
+
+        <fieldset>
+          <legend>Download</legend>
+          <label>Name <input id="title" type="text" maxlength="60" /></label>
+          <div class="segmented" id="quality">
+            <label><input type="radio" name="quality" value="standard" /><span>Standard</span></label>
+            <label><input type="radio" name="quality" value="fine" /><span>Fine (slower)</span></label>
+          </div>
+          <div class="actions">
+            <button id="btn-preview" type="button" class="secondary">Preview in 3D</button>
+            <button id="btn-download" type="button" class="primary">Download files</button>
+          </div>
+          <div id="status" class="status" hidden>
+            <div class="bar"><div id="bar-fill"></div></div>
+            <span id="status-text"></span>
+          </div>
+          <p id="stats" class="note"></p>
+        </fieldset>
+      </form>
+    </aside>
+  </main>
+
+  <footer class="credits">
+    Elevation: <a href="https://registry.opendata.aws/terrain-tiles/" target="_blank" rel="noopener">Terrain Tiles</a> by Mapzen on AWS Open Data
+    (USGS SRTM, 3DEP and GMTED2010; NOAA ETOPO1; © Environment Agency copyright and/or database right 2015, and
+    <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md" target="_blank" rel="noopener">other sources</a>).
+    Buildings: Environment Agency LIDAR Composite DSM/DTM, © Environment Agency copyright and/or database right 2022, Open Government Licence v3.0.
+    Map: <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> © OpenMapTiles © OpenStreetMap contributors.
+    Search: Nominatim. Tiles hang in the same positions as
+    <a href="https://www.printables.com/model/850000-hexagon-moon-wall-art" target="_blank" rel="noopener">Hexagon Moon Wall Art</a>.
+  </footer>
+</body>
+</html>
